@@ -39,7 +39,7 @@ uint8_t multiTasker::newTask(void (*task)()) {
     for (uint8_t i = 0; i < taskNum; i++) {
       if (taskManager[i] == (uint16_t)task) return 1;
     }
-    uint16_t* mem = (uint16_t*)realloc(taskManager, (taskNum + 1) * sizeof(uint16_t));
+    uint16_t* mem = taskNum ? (uint16_t*)realloc(taskManager, (taskNum + 1) * sizeof(uint16_t)) : (uint16_t*)malloc(sizeof(uint16_t));
     if (mem != NULL) {
       taskManager = mem;
       taskManager[taskNum++] = (uint16_t)task;
@@ -56,8 +56,8 @@ boolean multiTasker::killTask(void (*task)()) {
         for (uint8_t t = i; t < taskNum; t++) {
           taskManager[t] = taskManager[t + 1];
         }
-        taskManager = (uint16_t*)realloc(taskManager, taskNum * sizeof(uint16_t));
-        taskNum--;
+        if (--taskNum) taskManager = (uint16_t*)realloc(taskManager, taskNum * sizeof(uint16_t));
+        else free(taskManager);
         return 0;
       }
     }
@@ -66,12 +66,13 @@ boolean multiTasker::killTask(void (*task)()) {
 }
 
 boolean multiTasker::killTask(uint8_t task) {
-  if (taskNum) {
+  if (taskNum > task) {
     for (uint8_t i = task; i < taskNum; i++) {
       taskManager[i] = taskManager[i + 1];
     }
     taskManager = (uint16_t*)realloc(taskManager, taskNum * sizeof(uint16_t));
-    taskNum--;
+    if (--taskNum) taskManager = (uint16_t*)realloc(taskManager, taskNum * sizeof(uint16_t));
+    else free(taskManager);
     return 0;
   }
   return 1;
